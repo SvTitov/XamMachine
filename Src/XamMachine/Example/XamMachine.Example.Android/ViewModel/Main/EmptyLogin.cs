@@ -2,12 +2,11 @@
 
 namespace XamMachine.Example.Android.ViewModel.Main
 {
-    public class FilledState : State<MainViewModel.MainStates>
+    public class EmptyLogin : State<MainViewModel.MainStates>
     {
         private MainViewModel _viewModel;
 
-        public FilledState(MainViewModel viewModel, MainViewModel.MainStates state)
-            : base(state)
+        public EmptyLogin(MainViewModel viewModel, MainViewModel.MainStates @enum) : base(@enum)
         {
             _viewModel = viewModel;
         }
@@ -23,12 +22,11 @@ namespace XamMachine.Example.Android.ViewModel.Main
 
         public override void EnterState()
         {
-            _viewModel.ActionEnable = true;
+            _viewModel.ActionEnable = false;
         }
 
         public override void LeaveState()
         {
-            
         }
     }
 }

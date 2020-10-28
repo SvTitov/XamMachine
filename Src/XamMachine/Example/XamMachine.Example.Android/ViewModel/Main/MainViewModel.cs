@@ -1,28 +1,43 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using XamMachine.Core.Abstract;
+using XamMachine.Example.Android.Annotations;
 
 namespace XamMachine.Example.Android.ViewModel.Main
 {
-    public class MainViewModel : IDisposable
+    public class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         private bool _actionEnable;
         private Action<bool> _onActionCallback;
         private MainStateMachine<MainStates> _stateMachine;
-        private string _someText;
+        private string _login;
+        private string _password;
 
-        public string SomeText
+        public string Login
         {
-            get => _someText;
+            get => _login;
             set
             {
-                _someText = value;
-                _stateMachine.Move(string.IsNullOrEmpty(_someText) ? MainStates.Empty : MainStates.Filled);
+                _login = value;
+                OnPropertyChanged(nameof(Login));
+            }
+        }
+
+        public string Password
+        {
+            get => _password;
+            set
+            {
+                _password = value; 
+                OnPropertyChanged(nameof(Password));
             }
         }
 
         public enum MainStates
         {
-            Empty,
+            EmptyLogin,
+            EmptyPassword,
             Filled
         }
 
@@ -36,15 +51,27 @@ namespace XamMachine.Example.Android.ViewModel.Main
             }
         }
 
-        public MainViewModel()
+        public void Init()
         {
-            _stateMachine = new MainStateMachine<MainStates> (new State<MainStates>[] 
+            _stateMachine = new MainStateMachine<MainStates>(this, new State<MainStates>[]
             {
-                new EmptyState(this, MainStates.Empty),
-                new FilledState(this, MainStates.Filled), 
-            }, MainStates.Empty);
-        }
+                new EmptyLogin(this, MainStates.EmptyLogin), 
+                new EmptyPassword(this, MainStates.EmptyPassword),
+                new FilledState(this, MainStates.Filled),
+            }, MainStates.EmptyLogin);
 
+
+            _stateMachine.ActOn(this, model => model.Login, string.IsNullOrEmpty, MainStates.EmptyLogin);
+            _stateMachine.ActOn(this, model => model.Password, string.IsNullOrEmpty, MainStates.EmptyLogin);
+
+            _stateMachine.ActOn
+            (
+                this,
+                vm => vm.Login,
+                property => !string.IsNullOrEmpty(property),
+                MainStates.Filled
+            );
+        }
 
         public void SetOnActionCallback(Action<bool> action)
         {
@@ -57,5 +84,17 @@ namespace XamMachine.Example.Android.ViewModel.Main
             _stateMachine = null;
             _onActionCallback = null;
         }
+
+        #region Property Changed
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        #endregion
     }
 }

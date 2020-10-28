@@ -11,8 +11,6 @@ namespace XamMachine.Core.Abstract
             Key = @enum;
         }
 
-        public abstract void Move(TEnum state);
-
         /// <summary> Add state case
         /// </summary>
         public abstract void Add(TEnum stat);

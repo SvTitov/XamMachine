@@ -11,9 +11,14 @@
         android:layout_height="match_parent">
       <EditText
           android:inputType="text"
-          android:id="@+id/editText"
+          android:id="@+id/logingET"
           android:layout_width="100dp"
           android:layout_height="wrap_content"/>
+      <EditText
+        android:inputType="text"
+        android:id="@+id/passwordET"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"/>
       <Button
           android:id="@+id/clickBtn"
           android:layout_width="wrap_content"

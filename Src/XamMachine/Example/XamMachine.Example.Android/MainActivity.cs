@@ -4,7 +4,6 @@ using Android.OS;
 using Android.Support.V7.App;
 using Android.Text;
 using Android.Widget;
-using XamMachine.Example.Android.ViewModel;
 using XamMachine.Example.Android.ViewModel.Main;
 
 namespace XamMachine.Example.Android
@@ -13,7 +12,8 @@ namespace XamMachine.Example.Android
     public class MainActivity : AppCompatActivity
     {
         private MainViewModel _viewModel;
-        private EditText _editText;
+        private EditText _loginET;
+        private EditText _passwordET;
         private Button _button;
 
 
@@ -22,12 +22,11 @@ namespace XamMachine.Example.Android
             base.OnCreate(savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
 
-            _editText = FindViewById<EditText>(Resource.Id.editText);
+            _loginET = FindViewById<EditText>(Resource.Id.logingET);
+            _passwordET = FindViewById<EditText>(Resource.Id.passwordET);
             _button = FindViewById<Button>(Resource.Id.clickBtn);
 
-            _viewModel = new MainViewModel();
-
-            _viewModel.SetOnActionCallback(OnAction);
+            Init();
         }
 
         private void OnAction(bool value)
@@ -40,6 +39,15 @@ namespace XamMachine.Example.Android
             base.OnResume();
 
             Subscribe();
+        }
+
+        private void Init()
+        {
+            _viewModel = new MainViewModel();
+
+            _viewModel.SetOnActionCallback(OnAction);
+
+            _viewModel.Init();
         }
 
         protected override void OnPause()
@@ -60,18 +68,26 @@ namespace XamMachine.Example.Android
         private void Subscribe()
         {
             _button.Click += ButtonOnClick;
-            _editText.TextChanged += EditTextOnTextChanged;
+            _loginET.TextChanged += LoginEtOnTextChanged;
+            _passwordET.TextChanged += PasswordEtOnTextChanged;
         }
+
 
         private void Unsubscribe()
         {
             _button.Click -= ButtonOnClick;
-            _editText.TextChanged -= EditTextOnTextChanged;
+            _loginET.TextChanged -= LoginEtOnTextChanged;
+            _passwordET.TextChanged -= PasswordEtOnTextChanged;
         }
 
-        private void EditTextOnTextChanged(object sender, TextChangedEventArgs e)
+        private void PasswordEtOnTextChanged(object sender, TextChangedEventArgs e)
         {
-            _viewModel.SomeText = e.Text?.ToString();
+            _viewModel.Password = e.Text?.ToString();
+        }
+
+        private void LoginEtOnTextChanged(object sender, TextChangedEventArgs e)
+        {
+            _viewModel.Login = e.Text?.ToString();
         }
 
         private void ButtonOnClick(object sender, EventArgs e)

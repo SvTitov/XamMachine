@@ -1,12 +1,14 @@
-﻿using XamMachine.Core.Abstract;
+﻿using System.Collections.Generic;
+using XamMachine.Core.Abstract;
 
 namespace XamMachine.Example.Android.ViewModel.Main
 {
-    public class FilledState : State<MainViewModel.MainStates>
+    public class EmptyPassword : State<MainViewModel.MainStates>
     {
         private MainViewModel _viewModel;
+        private List<MainViewModel.MainStates> _cases = new List<MainViewModel.MainStates>();
 
-        public FilledState(MainViewModel viewModel, MainViewModel.MainStates state)
+        public EmptyPassword(MainViewModel viewModel, MainViewModel.MainStates state)
             : base(state)
         {
             _viewModel = viewModel;
@@ -14,6 +16,7 @@ namespace XamMachine.Example.Android.ViewModel.Main
 
         public override void Add(MainViewModel.MainStates stat)
         {
+            
         }
 
         public override void Release()
@@ -23,12 +26,10 @@ namespace XamMachine.Example.Android.ViewModel.Main
 
         public override void EnterState()
         {
-            _viewModel.ActionEnable = true;
+            _viewModel.ActionEnable = false;
         }
 
         public override void LeaveState()
-        {
-            
-        }
+        { }
     }
 }
