@@ -69,9 +69,6 @@
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ViewModel\Main\EmptyLogin.cs" />
-    <Compile Include="ViewModel\Main\EmptyPassword.cs" />
-    <Compile Include="ViewModel\Main\FilledState.cs" />
     <Compile Include="ViewModel\Main\MainStateMachine.cs" />
     <Compile Include="ViewModel\Main\MainViewModel.cs" />
   </ItemGroup>

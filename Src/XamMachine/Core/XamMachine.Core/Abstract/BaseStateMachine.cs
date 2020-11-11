@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace XamMachine.Core.Abstract
 {
@@ -11,63 +11,55 @@ namespace XamMachine.Core.Abstract
         where TViewModel : class, INotifyPropertyChanged
     {
         private TViewModel _viewModel;
+        private readonly TEnum _initState;
         private bool _isSubscribed;
 
 
-        public Dictionary<TEnum, State<TEnum>> _states = new Dictionary<TEnum, State<TEnum>>();
-
-        private readonly Dictionary<string, List<ISourcePath<TEnum>>> _testDictionary
+        private readonly Dictionary<string, List<ISourcePath<TEnum>>> _callbacksDictionary
             = new Dictionary<string, List<ISourcePath<TEnum>>>();
 
-        public State<TEnum> _lastState;
+        private Dictionary<TEnum, CState<TViewModel>> _states = new Dictionary<TEnum, CState<TViewModel>>();
 
-        protected BaseStateMachine(State<TEnum>[] states)
-        {
-            InitStates(states);
-        }
 
-        protected BaseStateMachine(TViewModel viewModel, State<TEnum>[] states, TEnum initState)
+        protected CState<TViewModel> LastState;
+
+        protected BaseStateMachine(TViewModel viewModel, TEnum initState)
         {
             _viewModel = viewModel;
-
-            InitStates(states);
-            InitWith(initState);
+            _initState = initState;
         }
 
-        private void InitStates(State<TEnum>[] states)
+        public void Build()
         {
-            _states = states.ToDictionary(x => x.Key, y => y);
+            if (_states.TryGetValue(_initState, out LastState))
+            {
+                LastState.ActiveState();
+            }
         }
 
-        public void InitWith(TEnum state)
+        public CState<TViewModel> CurrentState()
         {
-            _lastState = _states[state];
-            _lastState.EnterState();
-        }
-
-        public State<TEnum> CurrentState()
-        {
-            return _lastState;
+            return LastState;
         }
 
         public virtual void Move(TEnum state)
         {
-            _lastState?.LeaveState();
-            _lastState = _states[state];
-            _lastState.EnterState();   
+            LastState?.Deactivate();
+            LastState = _states[state];
+            LastState.ActiveState();   
         }
 
         public void Dispose()
         {
             foreach (var keyValuePair in _states)
             {
-                keyValuePair.Value.Release();
+                keyValuePair.Value.Dispose();
             }
 
             _states.Clear();
             _states = null;
 
-            _testDictionary.Clear();
+            _callbacksDictionary.Clear();
             _viewModel.PropertyChanged -= ContextOnPropertyChanged;
             _viewModel = null;
         }
@@ -83,6 +75,12 @@ namespace XamMachine.Core.Abstract
             var srcPath = CreateSourcePath(context, predicate, enumTrue, compiledExp);
 
             AddSourcePath(name, srcPath);
+        }
+
+        //TODO params expressions
+        public void CombineActOn(TViewModel context)
+        {
+
         }
 
         private SourcePath<TViewModel, TType, TEnum> CreateSourcePath<TType>(TViewModel context, Func<TType, bool> predicate, TEnum enumTrue, Func<TViewModel, TType> compiled)
@@ -117,22 +115,22 @@ namespace XamMachine.Core.Abstract
 
         private void AddSourcePath<TType>(string name, SourcePath<TViewModel, TType, TEnum> srcPath)
         {
-            if (_testDictionary.TryGetValue(name, out var value))
+            if (_callbacksDictionary.TryGetValue(name, out var value))
                 value.Add(srcPath);
             else
-                _testDictionary.Add(name, new List<ISourcePath<TEnum>> {srcPath});
+                _callbacksDictionary.Add(name, new List<ISourcePath<TEnum>> {srcPath});
         }
 
         private void ContextOnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             var name = e.PropertyName;
 
-            if (!_testDictionary.TryGetValue(name, out var results)) 
+            if (!_callbacksDictionary.TryGetValue(name, out var results)) 
                 return;
 
             foreach (var sourcePath in results)
             {
-                var currentKey = this.CurrentState().Key;
+                var currentKey = this.CurrentState().State;
                 if (!currentKey.Equals(sourcePath.CaseIfTrue))
                 {
                     if (sourcePath.Invoke())
@@ -141,6 +139,87 @@ namespace XamMachine.Core.Abstract
                     }
                 }
             }
+        }
+
+        public IConfigurableState<TViewModel> ConfigureState(TEnum tEnum)
+        {
+            var state = new CState<TViewModel>(tEnum);
+            _states.Add(tEnum, state);
+
+            return state;
+        }
+    }
+
+    public interface IConfigurableState<TViewModel>
+        where TViewModel: class
+    {
+        IConfigurableState<TViewModel> WithContext(TViewModel model);
+
+        IConfigurableState<TViewModel> For<TType>(Expression<Func<TViewModel, TType>> expression, TType value);
+
+        void Build();
+    }
+
+    public class CState<TViewModel> : IConfigurableState<TViewModel>, IDisposable
+        where TViewModel : class
+    {
+        private WeakReference _context;
+
+        private List<Action> _callbacks = new List<Action>();
+
+        public Enum State { get; }
+
+        public CState(Enum @enum)
+        {
+            State = @enum;
+        }
+
+        protected TViewModel RetrieveContext()
+        {
+            return (TViewModel) _context.Target;
+        }
+
+        public IConfigurableState<TViewModel> WithContext(TViewModel model)
+        {
+            _context = new WeakReference(model);
+            return this;
+        }
+
+        public IConfigurableState<TViewModel> For<TType>(Expression<Func<TViewModel, TType>> expression, TType value)
+        {
+            if (expression.Body is MemberExpression memberExpression)
+            {
+                if (memberExpression.Member is PropertyInfo propertyInfo)
+                {
+                    _callbacks.Add(() =>
+                    {
+                        propertyInfo.SetValue(RetrieveContext(), value, null);
+                    });
+                }
+            }
+     
+            return this;
+        }
+
+        public void ActiveState()
+        {
+            _callbacks.ForEach(x => x.Invoke());
+        }
+
+        public void Deactivate()
+        {
+
+        }
+
+        public void Build()
+        {
+            
+        }
+
+        public void Dispose()
+        {
+            _callbacks.Clear();
+            _callbacks = null;
         }
     }
 }

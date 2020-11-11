@@ -36,8 +36,7 @@ namespace XamMachine.Example.Android.ViewModel.Main
 
         public enum MainStates
         {
-            EmptyLogin,
-            EmptyPassword,
+            Empty,
             Filled
         }
 
@@ -53,24 +52,31 @@ namespace XamMachine.Example.Android.ViewModel.Main
 
         public void Init()
         {
-            _stateMachine = new MainStateMachine<MainStates>(this, new State<MainStates>[]
-            {
-                new EmptyLogin(this, MainStates.EmptyLogin), 
-                new EmptyPassword(this, MainStates.EmptyPassword),
-                new FilledState(this, MainStates.Filled),
-            }, MainStates.EmptyLogin);
+            _stateMachine = new MainStateMachine<MainStates>(this, MainStates.Empty);
 
 
-            _stateMachine.ActOn(this, model => model.Login, string.IsNullOrEmpty, MainStates.EmptyLogin);
-            _stateMachine.ActOn(this, model => model.Password, string.IsNullOrEmpty, MainStates.EmptyLogin);
+            _stateMachine.ActOn(this, model => new Tuple<string,string>(model.Login, model.Password), tuple => string.IsNullOrEmpty(tuple.Item1) && string.IsNullOrEmpty(tuple.Item2) , MainStates.Empty);
 
             _stateMachine.ActOn
             (
                 this,
-                vm => vm.Login,
-                property => !string.IsNullOrEmpty(property),
+                vm => new Tuple<string,string>(vm.Login, vm.Password),  
+                tuple => !string.IsNullOrEmpty(tuple.Item1) && !string.IsNullOrEmpty(tuple.Item2),
                 MainStates.Filled
             );
+
+            //*****************************
+            _stateMachine.ConfigureState(MainStates.Empty)
+                .WithContext(this)
+                .For(vm => vm.ActionEnable, false)
+                .Build();
+
+            _stateMachine.ConfigureState(MainStates.Filled)
+                .WithContext(this)
+                .For(vm => vm.ActionEnable, true)
+                .Build();
+
+            _stateMachine.Build();
         }
 
         public void SetOnActionCallback(Action<bool> action)
