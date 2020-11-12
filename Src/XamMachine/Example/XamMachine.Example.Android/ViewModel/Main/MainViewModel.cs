@@ -54,18 +54,6 @@ namespace XamMachine.Example.Android.ViewModel.Main
         {
             _stateMachine = new MainStateMachine<MainStates>(this, MainStates.Empty);
 
-
-            _stateMachine.ActOn(this, model => new Tuple<string,string>(model.Login, model.Password), tuple => string.IsNullOrEmpty(tuple.Item1) && string.IsNullOrEmpty(tuple.Item2) , MainStates.Empty);
-
-            _stateMachine.ActOn
-            (
-                this,
-                vm => new Tuple<string,string>(vm.Login, vm.Password),  
-                tuple => !string.IsNullOrEmpty(tuple.Item1) && !string.IsNullOrEmpty(tuple.Item2),
-                MainStates.Filled
-            );
-
-            //*****************************
             _stateMachine.ConfigureState(MainStates.Empty)
                 .WithContext(this)
                 .For(vm => vm.ActionEnable, false)
@@ -75,6 +63,27 @@ namespace XamMachine.Example.Android.ViewModel.Main
                 .WithContext(this)
                 .For(vm => vm.ActionEnable, true)
                 .Build();
+
+            _stateMachine.CombineActOn(this, MainStates.Empty,
+                (model => model.Login, string.IsNullOrEmpty),
+                (model => model.Password, string.IsNullOrEmpty));
+
+            _stateMachine.CombineActOn(this, MainStates.Filled,
+                (model => model.Login, value => !string.IsNullOrEmpty(value)),
+                (model => model.Password, value => !string.IsNullOrEmpty(value)));
+
+            //_stateMachine.ActOn(this, model => new Tuple<string, string>(model.Login, model.Password), tuple => string.IsNullOrEmpty(tuple.Item1) && string.IsNullOrEmpty(tuple.Item2), MainStates.Empty);
+
+            //_stateMachine.ActOn
+            //(
+            //    this,
+            //    vm => new Tuple<string,string>(vm.Login, vm.Password),  
+            //    tuple => !string.IsNullOrEmpty(tuple.Item1) && !string.IsNullOrEmpty(tuple.Item2),
+            //    MainStates.Filled
+            //);
+
+            //*****************************
+
 
             _stateMachine.Build();
         }

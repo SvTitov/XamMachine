@@ -77,10 +77,12 @@ namespace XamMachine.Core.Abstract
             AddSourcePath(name, srcPath);
         }
 
-        //TODO params expressions
-        public void CombineActOn(TViewModel context)
+        public void CombineActOn<TType>(TViewModel context, TEnum eEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
         {
-
+            foreach (var valueTuple in tuples)
+            {
+                ActOn(context, valueTuple.expression, valueTuple.predicate, eEnum);
+            }
         }
 
         private SourcePath<TViewModel, TType, TEnum> CreateSourcePath<TType>(TViewModel context, Func<TType, bool> predicate, TEnum enumTrue, Func<TViewModel, TType> compiled)
@@ -109,7 +111,7 @@ namespace XamMachine.Core.Abstract
             if (!_isSubscribed)
             {
                 context.PropertyChanged += ContextOnPropertyChanged;
-                _isSubscribed = false;
+                _isSubscribed = true;
             }
         }
 
@@ -128,17 +130,32 @@ namespace XamMachine.Core.Abstract
             if (!_callbacksDictionary.TryGetValue(name, out var results)) 
                 return;
 
+            var currentKey = CurrentState().State;
+            bool? isValid = null;
+            TEnum navigateTo = default;
+
             foreach (var sourcePath in results)
             {
-                var currentKey = this.CurrentState().State;
                 if (!currentKey.Equals(sourcePath.CaseIfTrue))
                 {
-                    if (sourcePath.Invoke())
-                    {
-                        Move(sourcePath.CaseIfTrue);
-                    }
+                    var result = sourcePath.Invoke();
+                    navigateTo = sourcePath.CaseIfTrue;
+                    SetSearchValue(ref isValid, result);
                 }
             }
+
+            if (isValid.HasValue && isValid.Value)
+            {
+                Move(navigateTo);
+            }
+        }
+
+        protected void SetSearchValue(ref bool? result, bool searchResult)
+        {
+            if (result.HasValue)
+                result = result.Value && searchResult;
+            else
+                result = searchResult;
         }
 
         public IConfigurableState<TViewModel> ConfigureState(TEnum tEnum)
