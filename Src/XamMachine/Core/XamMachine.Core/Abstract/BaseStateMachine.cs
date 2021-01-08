@@ -75,7 +75,7 @@ namespace XamMachine.Core.Abstract
 
         public IConfigurableState<TViewModel> ConfigureState(TEnum tEnum)
         {
-            var state = new ModelState<TViewModel>(tEnum);
+            var state = new ModelState<TViewModel>(_viewModel, tEnum);
             _states.Add(tEnum, state);
 
             return state;
@@ -98,23 +98,23 @@ namespace XamMachine.Core.Abstract
             AddSourcePath(name, srcPath);
         }
 
-        public void CombineAnd<TType>(TViewModel context, TEnum eEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
+        public void CombineAnd<TType>(TEnum eEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
         {
-            Combine(context, CombineType.And, eEnum, tuples);
+            Combine(CombineType.And, eEnum, tuples);
         }
 
-        public void CombineOr<TType>(TViewModel context, TEnum eEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
+        public void CombineOr<TType>(TEnum eEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
         {
-            Combine(context, CombineType.Or, eEnum, tuples);
+            Combine(CombineType.Or, eEnum, tuples);
         }
 
-        private void Combine<TType>(TViewModel context, CombineType combineType, TEnum eEnum,
+        private void Combine<TType>(CombineType combineType, TEnum eEnum,
             (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
         {
             Expression last = null;
             foreach (var valueTuple in tuples)
             {
-                var callbackExpression = Expression.Invoke(valueTuple.expression, Expression.Constant(context));
+                var callbackExpression = Expression.Invoke(valueTuple.expression, Expression.Constant(_viewModel));
 
                 var trueExpression = Expression.Equal(Expression.Call(valueTuple.predicate.Method, callbackExpression),
                     Expression.Constant(true));
@@ -124,7 +124,7 @@ namespace XamMachine.Core.Abstract
 
             var predicate = Expression.Lambda<Func<bool>>(last).Compile();
 
-            ActOnMultiple(context, eEnum, predicate, tuples.Select(x => x.expression).ToArray());
+            ActOnMultiple(_viewModel, eEnum, predicate, tuples.Select(x => x.expression).ToArray());
         }
 
         private BinaryExpression CreateCombineExpression(CombineType type, BinaryExpression trueExpression, Expression last)

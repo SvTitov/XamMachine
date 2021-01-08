@@ -55,20 +55,16 @@ namespace XamMachine.Example.Android.ViewModel.Main
             _stateMachine = new MainStateMachine<MainStates>(this, MainStates.Empty);
 
             _stateMachine.ConfigureState(MainStates.Empty)
-                .WithContext(this)
-                .For(vm => vm.ActionEnable, false)
-                .Build();
+                .For(vm => vm.ActionEnable, false);
 
             _stateMachine.ConfigureState(MainStates.Filled)
-                .WithContext(this)
-                .For(vm => vm.ActionEnable, true)
-                .Build();
+                .For(vm => vm.ActionEnable, true);
 
-            _stateMachine.CombineOr(this, MainStates.Empty,
+            _stateMachine.CombineOr(MainStates.Empty,
                 (model => model.Login, string.IsNullOrEmpty),
                 (model => model.Password, string.IsNullOrEmpty));
 
-            _stateMachine.CombineAnd(this, MainStates.Filled,
+            _stateMachine.CombineAnd(MainStates.Filled,
                 (model => model.Login, IsNotNull),
                 (model => model.Password, IsNotNull));
 

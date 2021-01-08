@@ -14,20 +14,15 @@ namespace XamMachine.Core.Abstract
 
         public Enum State { get; }
 
-        public ModelState(Enum @enum)
+        public ModelState(TViewModel model,Enum @enum)
         {
             State = @enum;
+            _context = new WeakReference(model);
         }
 
         protected TViewModel RetrieveContext()
         {
             return (TViewModel) _context.Target;
-        }
-
-        public IConfigurableState<TViewModel> WithContext(TViewModel model)
-        {
-            _context = new WeakReference(model);
-            return this;
         }
 
         public IConfigurableState<TViewModel> For<TType>(Expression<Func<TViewModel, TType>> expression, TType value)
@@ -54,11 +49,6 @@ namespace XamMachine.Core.Abstract
         public void Deactivate()
         {
 
-        }
-
-        public void Build()
-        {
-            
         }
 
         public void Dispose()
