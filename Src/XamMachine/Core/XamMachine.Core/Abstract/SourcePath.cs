@@ -45,4 +45,41 @@ namespace XamMachine.Core.Abstract
         bool Invoke();
         TEnum CaseIfTrue { get; set; }
     }
+
+    public class SourcePathMulti<TContext, TProperty, TEnum> : ISourcePath<TEnum>
+        where TContext : class
+        where TEnum : Enum
+    {
+        private readonly WeakReference _contextReference;
+
+        public SourcePathMulti(object context)
+        {
+            _contextReference = new WeakReference(context);
+        }
+
+        public Func<TContext, TProperty> PropertyCache { get; set; }
+
+        public Func<bool> Predicate { get; set; }
+
+        public TEnum CaseIfTrue { get; set; }
+
+        public TContext Context
+        {
+            get
+            {
+                if (_contextReference.IsAlive)
+                    return (TContext)_contextReference.Target;
+
+                return null;
+            }
+        }
+
+        public bool Invoke()
+        {
+            var ww = PropertyCache((TContext) _contextReference.Target);
+
+            var ss = Predicate();
+            return ss;
+        }
+    }
 }

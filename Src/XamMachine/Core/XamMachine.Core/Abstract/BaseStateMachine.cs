@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 
 namespace XamMachine.Core.Abstract
 {
@@ -79,10 +81,51 @@ namespace XamMachine.Core.Abstract
 
         public void CombineActOn<TType>(TViewModel context, TEnum eEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
         {
+            Expression last = null;
             foreach (var valueTuple in tuples)
             {
-                ActOn(context, valueTuple.expression, valueTuple.predicate, eEnum);
+                var callbackExpression = Expression.Invoke(valueTuple.expression, Expression.Constant(context));
+
+                var trueExpression = Expression.Equal(Expression.Call(valueTuple.predicate.Method, callbackExpression), Expression.Constant(true));
+
+                if (last == null)
+                {
+                    last = trueExpression;
+                }
+                else
+                {
+                    last = Expression.AndAlso(trueExpression, last);
+                }
             }
+
+            var predicate = Expression.Lambda<Func<bool>>(last).Compile();
+
+            ActOnMultiple(context, eEnum, predicate, tuples.Select(x => x.expression).ToArray());
+        }
+
+        private void ActOnMultiple<TType>(TViewModel context, TEnum enEnum, Func<bool> predicate, params Expression<Func<TViewModel, TType>>[] expression)
+        {
+            SubscribePropertyChanged(context);
+
+            foreach (var expression1 in expression)
+            {
+                var name = GetPropertyName(expression1);
+                var compiledExp = expression1.Compile();
+                var srcPath = CreateSourcePath(context, predicate, enEnum, compiledExp);
+                AddSourcePath(name, srcPath);
+            }
+        }
+
+        private SourcePathMulti<TViewModel, TType, TEnum> CreateSourcePath<TType>(TViewModel context, Func<bool> predicate, TEnum enumTrue, Func<TViewModel, TType> compiled)
+        {
+            var srcPath = new SourcePathMulti<TViewModel, TType, TEnum>(context)
+            {
+                PropertyCache = compiled,
+                Predicate = predicate,
+                CaseIfTrue = enumTrue,
+            };
+
+            return srcPath;
         }
 
         private SourcePath<TViewModel, TType, TEnum> CreateSourcePath<TType>(TViewModel context, Func<TType, bool> predicate, TEnum enumTrue, Func<TViewModel, TType> compiled)
@@ -115,7 +158,7 @@ namespace XamMachine.Core.Abstract
             }
         }
 
-        private void AddSourcePath<TType>(string name, SourcePath<TViewModel, TType, TEnum> srcPath)
+        private void AddSourcePath(string name, ISourcePath<TEnum> srcPath)
         {
             if (_callbacksDictionary.TryGetValue(name, out var value))
                 value.Add(srcPath);
@@ -127,14 +170,14 @@ namespace XamMachine.Core.Abstract
         {
             var name = e.PropertyName;
 
-            if (!_callbacksDictionary.TryGetValue(name, out var results)) 
+            if (!_callbacksDictionary.TryGetValue(name, out var expressionSourcePaths)) 
                 return;
 
             var currentKey = CurrentState().State;
             bool? isValid = null;
             TEnum navigateTo = default;
 
-            foreach (var sourcePath in results)
+            foreach (var sourcePath in expressionSourcePaths)
             {
                 if (!currentKey.Equals(sourcePath.CaseIfTrue))
                 {
