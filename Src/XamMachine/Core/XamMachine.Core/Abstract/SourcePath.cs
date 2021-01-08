@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace XamMachine.Core.Abstract
 {
@@ -76,10 +74,7 @@ namespace XamMachine.Core.Abstract
 
         public bool Invoke()
         {
-            var ww = PropertyCache((TContext) _contextReference.Target);
-
-            var ss = Predicate();
-            return ss;
+            return Predicate();
         }
     }
 }

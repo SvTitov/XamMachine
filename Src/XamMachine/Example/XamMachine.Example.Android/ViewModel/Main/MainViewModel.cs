@@ -64,11 +64,11 @@ namespace XamMachine.Example.Android.ViewModel.Main
                 .For(vm => vm.ActionEnable, true)
                 .Build();
 
-            _stateMachine.CombineActOn(this, MainStates.Empty,
+            _stateMachine.CombineOr(this, MainStates.Empty,
                 (model => model.Login, string.IsNullOrEmpty),
                 (model => model.Password, string.IsNullOrEmpty));
 
-            _stateMachine.CombineActOn(this, MainStates.Filled,
+            _stateMachine.CombineAnd(this, MainStates.Filled,
                 (model => model.Login, IsNotNull),
                 (model => model.Password, IsNotNull));
 
@@ -76,19 +76,6 @@ namespace XamMachine.Example.Android.ViewModel.Main
             {
                 return !string.IsNullOrEmpty(val);
             }
-
-            //_stateMachine.ActOn(this, model => new Tuple<string, string>(model.Login, model.Password), tuple => string.IsNullOrEmpty(tuple.Item1) && string.IsNullOrEmpty(tuple.Item2), MainStates.Empty);
-
-            //_stateMachine.ActOn
-            //(
-            //    this,
-            //    vm => new Tuple<string, string>(vm.Login, vm.Password),
-            //    tuple => !string.IsNullOrEmpty(tuple.Item1) && !string.IsNullOrEmpty(tuple.Item2),
-            //    MainStates.Filled
-            //);
-
-            //*****************************
-
 
             _stateMachine.Build();
         }

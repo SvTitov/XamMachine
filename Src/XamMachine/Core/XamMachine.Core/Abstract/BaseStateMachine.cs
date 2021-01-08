@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 
 namespace XamMachine.Core.Abstract
@@ -12,24 +11,32 @@ namespace XamMachine.Core.Abstract
         where TEnum : Enum, new()
         where TViewModel : class, INotifyPropertyChanged
     {
+        #region Fileds
+
         private TViewModel _viewModel;
         private readonly TEnum _initState;
         private bool _isSubscribed;
 
-
         private readonly Dictionary<string, List<ISourcePath<TEnum>>> _callbacksDictionary
             = new Dictionary<string, List<ISourcePath<TEnum>>>();
 
-        private Dictionary<TEnum, CState<TViewModel>> _states = new Dictionary<TEnum, CState<TViewModel>>();
+        private Dictionary<TEnum, ModelState<TViewModel>> _states = new Dictionary<TEnum, ModelState<TViewModel>>();
 
+        protected ModelState<TViewModel> LastState;
 
-        protected CState<TViewModel> LastState;
+        #endregion
+
+        #region Ctor
 
         protected BaseStateMachine(TViewModel viewModel, TEnum initState)
         {
             _viewModel = viewModel;
             _initState = initState;
         }
+
+        #endregion
+
+        #region Public
 
         public void Build()
         {
@@ -39,7 +46,7 @@ namespace XamMachine.Core.Abstract
             }
         }
 
-        public CState<TViewModel> CurrentState()
+        public ModelState<TViewModel> CurrentState()
         {
             return LastState;
         }
@@ -48,7 +55,7 @@ namespace XamMachine.Core.Abstract
         {
             LastState?.Deactivate();
             LastState = _states[state];
-            LastState.ActiveState();   
+            LastState.ActiveState();
         }
 
         public void Dispose()
@@ -66,6 +73,18 @@ namespace XamMachine.Core.Abstract
             _viewModel = null;
         }
 
+        public IConfigurableState<TViewModel> ConfigureState(TEnum tEnum)
+        {
+            var state = new ModelState<TViewModel>(tEnum);
+            _states.Add(tEnum, state);
+
+            return state;
+        }
+
+        #endregion
+
+        #region Combine
+
         public void ActOn<TType>(TViewModel context, Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate, TEnum enumTrue)
         {
             SubscribePropertyChanged(context);
@@ -79,29 +98,51 @@ namespace XamMachine.Core.Abstract
             AddSourcePath(name, srcPath);
         }
 
-        public void CombineActOn<TType>(TViewModel context, TEnum eEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
+        public void CombineAnd<TType>(TViewModel context, TEnum eEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
+        {
+            Combine(context, CombineType.And, eEnum, tuples);
+        }
+
+        public void CombineOr<TType>(TViewModel context, TEnum eEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
+        {
+            Combine(context, CombineType.Or, eEnum, tuples);
+        }
+
+        private void Combine<TType>(TViewModel context, CombineType combineType, TEnum eEnum,
+            (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
         {
             Expression last = null;
             foreach (var valueTuple in tuples)
             {
                 var callbackExpression = Expression.Invoke(valueTuple.expression, Expression.Constant(context));
 
-                var trueExpression = Expression.Equal(Expression.Call(valueTuple.predicate.Method, callbackExpression), Expression.Constant(true));
+                var trueExpression = Expression.Equal(Expression.Call(valueTuple.predicate.Method, callbackExpression),
+                    Expression.Constant(true));
 
-                if (last == null)
-                {
-                    last = trueExpression;
-                }
-                else
-                {
-                    last = Expression.AndAlso(trueExpression, last);
-                }
+                last = last == null ? trueExpression : CreateCombineExpression(combineType, trueExpression, last);
             }
 
             var predicate = Expression.Lambda<Func<bool>>(last).Compile();
 
             ActOnMultiple(context, eEnum, predicate, tuples.Select(x => x.expression).ToArray());
         }
+
+        private BinaryExpression CreateCombineExpression(CombineType type, BinaryExpression trueExpression, Expression last)
+        {
+            switch (type)
+            {
+                case CombineType.And:
+                    return Expression.AndAlso(trueExpression, last);
+                case CombineType.Or:
+                    return Expression.Or(trueExpression, last);
+            }
+
+            throw new ArgumentException($"{nameof(CombineType)} should be declared!");
+        }
+
+        #endregion
+
+        #region Private
 
         private void ActOnMultiple<TType>(TViewModel context, TEnum enEnum, Func<bool> predicate, params Expression<Func<TViewModel, TType>>[] expression)
         {
@@ -201,85 +242,6 @@ namespace XamMachine.Core.Abstract
                 result = searchResult;
         }
 
-        public IConfigurableState<TViewModel> ConfigureState(TEnum tEnum)
-        {
-            var state = new CState<TViewModel>(tEnum);
-            _states.Add(tEnum, state);
-
-            return state;
-        }
-    }
-
-    public interface IConfigurableState<TViewModel>
-        where TViewModel: class
-    {
-        IConfigurableState<TViewModel> WithContext(TViewModel model);
-
-        IConfigurableState<TViewModel> For<TType>(Expression<Func<TViewModel, TType>> expression, TType value);
-
-        void Build();
-    }
-
-    public class CState<TViewModel> : IConfigurableState<TViewModel>, IDisposable
-        where TViewModel : class
-    {
-        private WeakReference _context;
-
-        private List<Action> _callbacks = new List<Action>();
-
-        public Enum State { get; }
-
-        public CState(Enum @enum)
-        {
-            State = @enum;
-        }
-
-        protected TViewModel RetrieveContext()
-        {
-            return (TViewModel) _context.Target;
-        }
-
-        public IConfigurableState<TViewModel> WithContext(TViewModel model)
-        {
-            _context = new WeakReference(model);
-            return this;
-        }
-
-        public IConfigurableState<TViewModel> For<TType>(Expression<Func<TViewModel, TType>> expression, TType value)
-        {
-            if (expression.Body is MemberExpression memberExpression)
-            {
-                if (memberExpression.Member is PropertyInfo propertyInfo)
-                {
-                    _callbacks.Add(() =>
-                    {
-                        propertyInfo.SetValue(RetrieveContext(), value, null);
-                    });
-                }
-            }
-     
-            return this;
-        }
-
-        public void ActiveState()
-        {
-            _callbacks.ForEach(x => x.Invoke());
-        }
-
-        public void Deactivate()
-        {
-
-        }
-
-        public void Build()
-        {
-            
-        }
-
-        public void Dispose()
-        {
-            _callbacks.Clear();
-            _callbacks = null;
-        }
+        #endregion
     }
 }
