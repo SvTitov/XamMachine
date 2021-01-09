@@ -35,6 +35,11 @@ namespace XamMachine.Core.Abstract
             var value = PropertyCache.Invoke(Context);
             return Predicate.Invoke(value);
         }
+
+        public override string ToString()
+        {
+            return $"If true -> {CaseIfTrue}";
+        }
     }
 
     public interface ISourcePath<TEnum>
@@ -75,6 +80,11 @@ namespace XamMachine.Core.Abstract
         public bool Invoke()
         {
             return Predicate();
+        }
+
+        public override string ToString()
+        {
+            return $"If true -> {CaseIfTrue}";
         }
     }
 }

@@ -41,6 +41,16 @@ namespace XamMachine.Core.Abstract
             return this;
         }
 
+        public IConfigurableState<TViewModel> For(Expression<Action<TViewModel>> expression)
+        {
+            var @delegate = (Func<Action<TViewModel>>)Expression.Lambda(expression).Compile();
+            var callback = @delegate();
+
+            _callbacks.Add(() => { callback(RetrieveContext()); });
+
+            return this;
+        }
+
         public void ActiveState()
         {
             _callbacks.ForEach(x => x.Invoke());

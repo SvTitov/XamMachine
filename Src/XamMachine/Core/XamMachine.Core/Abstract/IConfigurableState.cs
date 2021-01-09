@@ -7,5 +7,7 @@ namespace XamMachine.Core.Abstract
         where TViewModel: class
     {
         IConfigurableState<TViewModel> For<TType>(Expression<Func<TViewModel, TType>> expression, TType value);
+
+        IConfigurableState<TViewModel> For(Expression<Action<TViewModel>> expression);
     }
 }

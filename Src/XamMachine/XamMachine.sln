@@ -3,11 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30611.23
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XamMachine.Core", "Core\XamMachine.Core\XamMachine.Core.csproj", "{94ED1A79-27BE-4C91-8AA1-D7632E58570D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XamMachine.Core", "Core\XamMachine.Core\XamMachine.Core.csproj", "{94ED1A79-27BE-4C91-8AA1-D7632E58570D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Example", "Example", "{113DE271-8C98-4492-A6A3-E45CDFFFB7B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XamMachine.Example.Android", "Example\XamMachine.Example.Android\XamMachine.Example.Android.csproj", "{EA26ECC0-9539-4936-8844-BFA86B901764}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XamMachine.Tests", "Tests\XamMachine.Tests\XamMachine.Tests.csproj", "{C0892456-88D3-4386-A849-4DF780BE9CDA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,6 +27,10 @@ Global
 		{EA26ECC0-9539-4936-8844-BFA86B901764}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA26ECC0-9539-4936-8844-BFA86B901764}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EA26ECC0-9539-4936-8844-BFA86B901764}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{C0892456-88D3-4386-A849-4DF780BE9CDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0892456-88D3-4386-A849-4DF780BE9CDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0892456-88D3-4386-A849-4DF780BE9CDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0892456-88D3-4386-A849-4DF780BE9CDA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
