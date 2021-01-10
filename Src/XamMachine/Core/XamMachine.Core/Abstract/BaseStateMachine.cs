@@ -163,7 +163,7 @@ namespace XamMachine.Core.Abstract
             {
                 PropertyCache = compiled,
                 Predicate = predicate,
-                CaseIfTrue = enumTrue,
+                Case = enumTrue,
             };
 
             return srcPath;
@@ -175,7 +175,7 @@ namespace XamMachine.Core.Abstract
             {
                 PropertyCache = compiled,
                 Predicate = predicate,
-                CaseIfTrue = enumTrue,
+                Case = enumTrue,
             };
 
             return srcPath;
@@ -214,21 +214,37 @@ namespace XamMachine.Core.Abstract
             if (!_callbacksDictionary.TryGetValue(name, out var expressionSourcePaths)) 
                 return;
 
-            var currentKey = CurrentState().State;
-            bool? isValid = null;
+            var currentKey = CurrentState();
+            var isValid = false;
             TEnum navigateTo = default;
 
-            foreach (var sourcePath in expressionSourcePaths.Where(item => !currentKey.Equals(item.CaseIfTrue))) //exclude current state
+            var nextPath = expressionSourcePaths.FirstOrDefault(x => x.Case.Equals(currentKey.NextState));
+            if (nextPath != null)
             {
-                var result = sourcePath.Invoke();
-                navigateTo = sourcePath.CaseIfTrue;
-                SetSearchValue(ref isValid, result);
+                navigateTo = ProcessSourcePath(nextPath, ref isValid);
+            }
+            else
+            {
+                foreach (var sourcePath in expressionSourcePaths.Where(item => !currentKey.State.Equals(item.Case))) //exclude current state
+                {
+                    navigateTo = ProcessSourcePath(sourcePath, ref isValid);
+                }
             }
 
-            if (isValid.HasValue && isValid.Value)
+            if (isValid)
             {
                 Move(navigateTo);
             }
+        }
+
+        private static TEnum ProcessSourcePath(ISourcePath<TEnum> nextPath, ref bool isValid)
+        {
+            var result = nextPath.Invoke();
+            //SetSearchValue(ref isValid, result);
+            if (result)
+                isValid = true;
+
+            return nextPath.Case;
         }
 
         protected void SetSearchValue(ref bool? result, bool searchResult)

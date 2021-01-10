@@ -17,7 +17,7 @@ namespace XamMachine.Core.Abstract
 
         public Func<TProperty, bool> Predicate { get; set; }
 
-        public TEnum CaseIfTrue { get; set; }
+        public TEnum Case { get; set; }
 
         public TContext Context
         {
@@ -38,7 +38,7 @@ namespace XamMachine.Core.Abstract
 
         public override string ToString()
         {
-            return $"If true -> {CaseIfTrue}";
+            return $"If true -> {Case}";
         }
     }
 
@@ -46,7 +46,7 @@ namespace XamMachine.Core.Abstract
         where TEnum : Enum
     {
         bool Invoke();
-        TEnum CaseIfTrue { get; set; }
+        TEnum Case { get; set; }
     }
 
     public class SourcePathMulti<TContext, TProperty, TEnum> : ISourcePath<TEnum>
@@ -64,7 +64,7 @@ namespace XamMachine.Core.Abstract
 
         public Func<bool> Predicate { get; set; }
 
-        public TEnum CaseIfTrue { get; set; }
+        public TEnum Case { get; set; }
 
         public TContext Context
         {
@@ -84,7 +84,7 @@ namespace XamMachine.Core.Abstract
 
         public override string ToString()
         {
-            return $"If true -> {CaseIfTrue}";
+            return $"If true -> {Case}";
         }
     }
 }
