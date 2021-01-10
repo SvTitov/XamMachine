@@ -27,23 +27,25 @@ namespace XamMachine.Tests.UnitTests
             }
 
             stateMachine.ConfigureState(MockEnum.EmptyState)
-                .For(vm => vm.Print(nameof(MockEnum.EmptyState)));
+                .For(vm => vm.Print(nameof(MockEnum.EmptyState)))
+                .Next(MockEnum.MiddleState);
+
+            stateMachine.ConfigureState(MockEnum.MiddleState)
+                .For(vm => vm.Print(nameof(MockEnum.MiddleState)))
+                .Next(MockEnum.NotEmptyState);
 
             stateMachine.ConfigureState(MockEnum.NotEmptyState)
                 .For(vm => vm.Print(nameof(MockEnum.NotEmptyState)));
 
-            stateMachine.ConfigureState(MockEnum.MiddleState)
-                .For(vm => vm.Print(nameof(MockEnum.MiddleState)));
-
-            stateMachine.CombineAnd(MockEnum.EmptyState,
+            stateMachine.ForCombineAnd(MockEnum.EmptyState,
                 (model => model.StringProperty1, string.IsNullOrEmpty),
                 (model => model.StringProperty2, string.IsNullOrEmpty));
 
-            stateMachine.CombineAnd(MockEnum.NotEmptyState,
+            stateMachine.ForCombineAnd(MockEnum.NotEmptyState,
                 (model => model.StringProperty1, IsNotNull),
                 (model => model.StringProperty2, IsNotNull));
 
-            stateMachine.CombineOr(MockEnum.MiddleState,
+            stateMachine.ForCombineOr(MockEnum.MiddleState,
                 (model => model.StringProperty1, IsNotNull),
                 (model => model.StringProperty2, IsNotNull));
            

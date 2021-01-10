@@ -98,20 +98,20 @@ namespace XamMachine.Core.Abstract
             AddSourcePath(name, srcPath);
         }
 
-        public void CombineAnd<TType>(TEnum eEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
+        public void ForCombineAnd<TType>(TEnum currentEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
         {
-            Combine(CombineType.And, eEnum, tuples);
+            Combine(CombineType.And, currentEnum, tuples);
         }
 
-        public void CombineOr<TType>(TEnum eEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
+        public void ForCombineOr<TType>(TEnum currentEnum, params (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
         {
-            Combine(CombineType.Or, eEnum, tuples);
+            Combine(CombineType.Or, currentEnum, tuples);
         }
 
-        private void Combine<TType>(CombineType combineType, TEnum eEnum,
+        private void Combine<TType>(CombineType combineType, TEnum currentEnum,
             (Expression<Func<TViewModel, TType>> expression, Func<TType, bool> predicate)[] tuples)
         {
-            Expression last = null;
+            Expression lastExpression = null;
             foreach (var valueTuple in tuples)
             {
                 var callbackExpression = Expression.Invoke(valueTuple.expression, Expression.Constant(_viewModel));
@@ -119,12 +119,12 @@ namespace XamMachine.Core.Abstract
                 var trueExpression = Expression.Equal(Expression.Call(valueTuple.predicate.Method, callbackExpression),
                     Expression.Constant(true));
 
-                last = last == null ? trueExpression : CreateCombineExpression(combineType, trueExpression, last);
+                lastExpression = lastExpression == null ? trueExpression : CreateCombineExpression(combineType, trueExpression, lastExpression);
             }
 
-            var predicate = Expression.Lambda<Func<bool>>(last).Compile();
+            var predicate = Expression.Lambda<Func<bool>>(lastExpression).Compile();
 
-            ActOnMultiple(_viewModel, eEnum, predicate, tuples.Select(x => x.expression).ToArray());
+            ActOnMultiple(_viewModel, currentEnum, predicate, tuples.Select(x => x.expression).ToArray());
         }
 
         private BinaryExpression CreateCombineExpression(CombineType type, BinaryExpression trueExpression, Expression last)
@@ -218,14 +218,11 @@ namespace XamMachine.Core.Abstract
             bool? isValid = null;
             TEnum navigateTo = default;
 
-            foreach (var sourcePath in expressionSourcePaths)
+            foreach (var sourcePath in expressionSourcePaths.Where(item => !currentKey.Equals(item.CaseIfTrue))) //exclude current state
             {
-                if (!currentKey.Equals(sourcePath.CaseIfTrue))
-                {
-                    var result = sourcePath.Invoke();
-                    navigateTo = sourcePath.CaseIfTrue;
-                    SetSearchValue(ref isValid, result);
-                }
+                var result = sourcePath.Invoke();
+                navigateTo = sourcePath.CaseIfTrue;
+                SetSearchValue(ref isValid, result);
             }
 
             if (isValid.HasValue && isValid.Value)

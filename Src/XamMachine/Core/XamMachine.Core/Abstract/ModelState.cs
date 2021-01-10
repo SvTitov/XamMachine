@@ -14,6 +14,8 @@ namespace XamMachine.Core.Abstract
 
         public Enum State { get; }
 
+        public Enum NextState { get; protected set; }
+
         public ModelState(TViewModel model,Enum @enum)
         {
             State = @enum;
@@ -38,6 +40,12 @@ namespace XamMachine.Core.Abstract
                 }
             }
      
+            return this;
+        }
+
+        public IConfigurableState<TViewModel> Next(Enum eEnum)
+        {
+            NextState = eEnum;
             return this;
         }
 
