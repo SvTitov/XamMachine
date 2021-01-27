@@ -27,15 +27,15 @@ namespace XamMachine.Tests.UnitTests
             }
 
             stateMachine.ConfigureState(MockEnum.EmptyState)
-                .For(vm => vm.Print(nameof(MockEnum.EmptyState)))
+                .Action(vm => vm.Print(nameof(MockEnum.EmptyState)))
                 .Next(MockEnum.MiddleState);
 
             stateMachine.ConfigureState(MockEnum.MiddleState)
-                .For(vm => vm.Print(nameof(MockEnum.MiddleState)))
+                .Action(vm => vm.Print(nameof(MockEnum.MiddleState)))
                 .Next(MockEnum.NotEmptyState);
 
             stateMachine.ConfigureState(MockEnum.NotEmptyState)
-                .For(vm => vm.Print(nameof(MockEnum.NotEmptyState)));
+                .Action(vm => vm.Print(nameof(MockEnum.NotEmptyState)));
 
             stateMachine.ForCombineAnd(MockEnum.EmptyState,
                 (model => model.StringProperty1, string.IsNullOrEmpty),
@@ -51,6 +51,14 @@ namespace XamMachine.Tests.UnitTests
            
             stateMachine.Build();
         }
+
+        void Test()
+        {
+            _stateMachine.ConfigureState(MockEnum.EmptyState)
+                .ActivationCondition(vm => string.IsNullOrEmpty(vm.StringProperty1))
+                .
+        }
+
 
         [TestMethod]
         public void CheckAllStatesEmptyContext()

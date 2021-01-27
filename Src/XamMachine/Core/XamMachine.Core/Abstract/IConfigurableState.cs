@@ -6,10 +6,20 @@ namespace XamMachine.Core.Abstract
     public interface IConfigurableState<TViewModel>
         where TViewModel: class
     {
-        IConfigurableState<TViewModel> For<TType>(Expression<Func<TViewModel, TType>> expression, TType value);
+        IConfigurableState<TViewModel> Action<TType>(Expression<Func<TViewModel, TType>> expression, TType value);
 
-        IConfigurableState<TViewModel> For(Expression<Action<TViewModel>> expression);
+        IConfigurableState<TViewModel> Action(Expression<Action<TViewModel>> expression);
 
-        IConfigurableState<TViewModel> Next(Enum eEnum);
+        IConfigurator<TViewModel> ActivationCondition(Expression<Func<TViewModel, bool>> expression);
+
+        IConfigurableState<TViewModel> Next(params Enum[] eEnums);
+    }
+
+    public interface IConfigurator<TViewModel>
+        where TViewModel : class
+    {
+        IConfigurableState<TViewModel> And(Expression<Func<TViewModel, bool>> expression);
+
+        IConfigurableState<TViewModel> Or(Expression<Func<TViewModel, bool>> expression);
     }
 }

@@ -27,7 +27,7 @@ namespace XamMachine.Core.Abstract
             return (TViewModel) _context.Target;
         }
 
-        public IConfigurableState<TViewModel> For<TType>(Expression<Func<TViewModel, TType>> expression, TType value)
+        public IConfigurableState<TViewModel> Action<TType>(Expression<Func<TViewModel, TType>> expression, TType value)
         {
             if (expression.Body is MemberExpression memberExpression)
             {
@@ -49,7 +49,7 @@ namespace XamMachine.Core.Abstract
             return this;
         }
 
-        public IConfigurableState<TViewModel> For(Expression<Action<TViewModel>> expression)
+        public IConfigurableState<TViewModel> Action(Expression<Action<TViewModel>> expression)
         {
             var @delegate = (Func<Action<TViewModel>>)Expression.Lambda(expression).Compile();
             var callback = @delegate();

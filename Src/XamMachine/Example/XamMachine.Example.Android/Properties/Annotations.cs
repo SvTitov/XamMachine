@@ -234,7 +234,7 @@ namespace XamMachine.Example.Android.Annotations
 
   /// <summary>
   /// Indicates that the function argument should be a string literal and match one
-  /// of the parameters of the caller function. For example, ReSharper annotates
+  /// of the parameters of the caller function. Action example, ReSharper annotates
   /// the parameter of <see cref="System.ArgumentNullException"/>.
   /// </summary>
   /// <example><code>
@@ -1041,7 +1041,7 @@ namespace XamMachine.Example.Android.Annotations
 
   /// <summary>
   /// Indicates that the marked method unconditionally terminates control flow execution.
-  /// For example, it could unconditionally throw exception.
+  /// Action example, it could unconditionally throw exception.
   /// </summary>
   [Obsolete("Use [ContractAnnotation('=> halt')] instead")]
   [AttributeUsage(AttributeTargets.Method)]
